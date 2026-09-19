@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VisionCart - Visual Search</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 360px;
+      background: #09090b;
+      color: #f4f4f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      font-size: 13px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #27272a;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #f59e0b;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 14px;
+    }
+    .title {
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+    }
+    .title span { color: #f59e0b; }
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      margin-right: 4px;
+    }
+    .dropzone {
+      border: 2px dashed #3f3f46;
+      border-radius: 12px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: #18181b;
+      transition: all 0.2s;
+    }
+    .dropzone:hover {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.05);
+    }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background: #f59e0b;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-secondary {
+      background: #27272a;
+      color: #f4f4f5;
+    }
+    .btn-secondary:hover { background: #3f3f46; }
+    .info-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: #a1a1aa;
+      line-height: 1.4;
+    }
+    .info-card strong { color: #f4f4f5; }
+    .settings-row {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .settings-row label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #71717a;
+      font-weight: 700;
+    }
+    .settings-row input {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      color: #f4f4f5;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <div class="logo-badge">V</div>
+      <div>
+        <div class="title">VISION<span>CART</span></div>
+        <div style="font-size:10px;color:#a1a1aa;">Visual Shopping Assistant</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#a1a1aa;display:flex;align-items:center;">
+      <span class="status-dot"></span> Active
+    </div>
+  </div>
+
+  <div class="dropzone" id="popup-dropzone">
+    <div style="font-size:24px;margin-bottom:6px;">📸</div>
+    <div style="font-weight:700;font-size:13px;">Drop image or click to browse</div>
+    <div style="font-size:11px;color:#a1a1aa;margin-top:2px;">Search clothes, shoes, tech & more</div>
+    <input type="file" id="popup-file-input" accept="image/*" style="display:none;" />
+  </div>
+
+  <button class="btn btn-secondary" id="btn-search-tab">
+    🔍 Search Product on Active Tab
+  </button>
+
+  <div class="info-card">
+    <strong>How to use on any shopping site:</strong><br>
+    Hover over any product image on Amazon, Meesho, Flipkart, Myntra, or Ajio, and click the <strong>VisionCart</strong> floating button, or right-click any image and select <em>"Find product with VisionCart"</em>.
+  </div>
+
+  <div class="settings-row">
+    <label>Backend Server URL (GitHub / Render / Local)</label>
+    <input type="text" id="server-url-input" placeholder="https://your-deployed-app.run.app" />
+  </div>
+
+  <div class="settings-row" style="margin-top:8px;">
+    <label>Direct Gemini API Key (Optional)</label>
+    <input type="password" id="gemini-key-input" placeholder="AIzaSy... (For 100% serverless search on Meesho)" />
+  </div>
+
+  <button class="btn btn-secondary" id="btn-save-server" style="padding:7px;font-size:11px;margin-top:8px;">
+    💾 Save Extension Settings
+  </button>
+
+  <div id="settings-feedback" style="font-size:11px;color:#10b981;margin-top:6px;text-align:center;display:none;"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

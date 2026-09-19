@@ -1,0 +1,6 @@
+{
+  "name": "VisionCart",
+  "description": "AI-powered visual shopping assistant to find exact matches, similar products, and alternatives by image across e-commerce stores.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
