@@ -15,7 +15,7 @@ import { performVisualSearch, getSystemHealth } from './services/api.js';
 import { AIAnalysisResult, DetectedObject, RankedProduct, LiveStoreLink, StorePriceBenchmark } from './types/index.js';
 import { DemoPreset } from './data/demoPresets.js';
 import { urlToBase64 } from './utils/imageHelper.js';
-import { AlertCircle, ArrowLeft, RefreshCw, ShoppingCart, Sparkles, Chrome, Download, MonitorSmartphone } from 'lucide-react';
+import { AlertCircle, ArrowLeft, RefreshCw, ShoppingCart, Sparkles, Chrome, Download, MonitorSmartphone, Upload } from 'lucide-react';
 
 export default function App() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -156,6 +156,8 @@ export default function App() {
         isSimulatorMode={isSimulatorMode}
         geminiActive={geminiActive}
         hasActiveSearch={hasResults || Boolean(selectedImage)}
+        onImageSelected={handleImageSelected}
+        onOpenCamera={() => setIsCameraOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -182,6 +184,7 @@ export default function App() {
           <StoreSimulator
             onBackToApp={() => setIsSimulatorMode(false)}
             onOpenDownloadModal={() => setIsExtensionModalOpen(true)}
+            onImageSelected={handleImageSelected}
           />
         ) : (
           <>
@@ -208,11 +211,27 @@ export default function App() {
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => setIsSimulatorMode(true)}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                  id="header-btn-upload-image"
+                  onClick={() => {
+                    const el = document.getElementById('product-image-file-input') as HTMLInputElement | null;
+                    if (el) el.click();
+                    else {
+                      const navEl = document.querySelector('header input[type="file"]') as HTMLInputElement | null;
+                      if (navEl) navEl.click();
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition-transform active:scale-95 cursor-pointer"
                 >
-                  <MonitorSmartphone className="w-3.5 h-3.5" />
-                  <span>Test on Shopping Store Demo</span>
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Image</span>
+                </button>
+
+                <button
+                  onClick={() => setIsSimulatorMode(true)}
+                  className="px-3.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <MonitorSmartphone className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Test Store Demo</span>
                 </button>
               </div>
             </div>

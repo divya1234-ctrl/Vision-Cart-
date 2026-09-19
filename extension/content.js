@@ -217,7 +217,14 @@
               <div class="vc-subtitle">Visual Shopping Extension</div>
             </div>
           </div>
-          <button id="vc-close-btn" title="Close Drawer">&times;</button>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label id="vc-drawer-upload-label" style="display:inline-flex;align-items:center;gap:4px;background:#f59e0b;color:#000;padding:5px 9px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,0.3);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Upload Image</span>
+              <input type="file" id="vc-drawer-file-input" accept="image/*" style="display:none;" />
+            </label>
+            <button id="vc-close-btn" title="Close Drawer">&times;</button>
+          </div>
         </div>
 
         <!-- Content Area -->
@@ -231,6 +238,22 @@
 
     document.getElementById("vc-close-btn").addEventListener("click", closeDrawer);
     document.getElementById("visioncart-drawer-backdrop").addEventListener("click", closeDrawer);
+
+    const drawerFileInput = document.getElementById("vc-drawer-file-input");
+    if (drawerFileInput) {
+      drawerFileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            if (ev.target && ev.target.result) {
+              openDrawerWithImage(ev.target.result, "Uploaded Photo");
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
 
     // Close on Escape key press (standard on e-commerce websites)
     document.addEventListener("keydown", (e) => {

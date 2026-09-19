@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { Upload, Camera, Sparkles, Image as ImageIcon, AlertCircle, X } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Upload, Camera, Sparkles, Image as ImageIcon, AlertCircle, X, Clipboard, Link as LinkIcon } from 'lucide-react';
+import { urlToBase64 } from '../utils/imageHelper.js';
 
 interface HeroUploaderProps {
   onImageSelected: (base64: string, mimeType: string) => void;
@@ -23,6 +24,9 @@ export const HeroUploader: React.FC<HeroUploaderProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileProcess = (file: File) => {
@@ -57,6 +61,28 @@ export const HeroUploader: React.FC<HeroUploaderProps> = ({
     reader.readAsDataURL(file);
   };
 
+  // Support pasting images from clipboard (e.g. copied from Meesho, Google, etc.)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (selectedPreview || isAnalyzing) return;
+      if (e.clipboardData && e.clipboardData.items) {
+        for (let i = 0; i < e.clipboardData.items.length; i++) {
+          const item = e.clipboardData.items[i];
+          if (item.type.indexOf('image') !== -1) {
+            const file = item.getAsFile();
+            if (file) {
+              handleFileProcess(file);
+              return;
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [selectedPreview, isAnalyzing]);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -79,6 +105,24 @@ export const HeroUploader: React.FC<HeroUploaderProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFileProcess(e.target.files[0]);
+    }
+  };
+
+  const handleUrlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!imageUrlInput.trim()) return;
+    setIsLoadingUrl(true);
+    setErrorMessage(null);
+
+    try {
+      const { base64, mimeType } = await urlToBase64(imageUrlInput.trim());
+      onImageSelected(base64, mimeType);
+      setImageUrlInput('');
+      setShowUrlInput(false);
+    } catch (err: any) {
+      setErrorMessage('Could not load image from this URL. Please upload the image file directly or try another link.');
+    } finally {
+      setIsLoadingUrl(false);
     }
   };
 
@@ -114,64 +158,106 @@ export const HeroUploader: React.FC<HeroUploaderProps> = ({
 
       {/* Upload Zone / Preview Card */}
       {!selectedPreview ? (
-        <div
-          id="dropzone-uploader"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 cursor-pointer transition-all duration-200 group bg-neutral-900/60 ${
-            isDragging
-              ? 'border-amber-400 bg-amber-400/5 scale-[1.01]'
-              : 'border-neutral-700 hover:border-neutral-500 hover:bg-neutral-900'
-          }`}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleInputChange}
-            className="hidden"
-            id="product-image-file-input"
-          />
+        <div className="space-y-3">
+          <div
+            id="dropzone-uploader"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-10 cursor-pointer transition-all duration-200 group bg-neutral-900 border-amber-500/40 hover:border-amber-400 hover:bg-neutral-800/80 shadow-xl ${
+              isDragging
+                ? 'border-amber-400 bg-amber-400/10 scale-[1.01]'
+                : ''
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleInputChange}
+              className="hidden"
+              id="product-image-file-input"
+            />
 
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-neutral-800 group-hover:bg-neutral-700 flex items-center justify-center border border-neutral-700 text-amber-400 transition-colors shadow-lg">
-              <Upload className="w-8 h-8 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 transition-transform group-hover:scale-110 shadow-lg">
+                <Upload className="w-8 h-8" />
+              </div>
 
-            <div className="space-y-1">
-              <p className="text-base font-semibold text-white">
-                Upload a product image or drag & drop here
-              </p>
-              <p className="text-xs text-neutral-400">
-                Supports JPEG, PNG, WEBP, GIF (up to 10MB)
-              </p>
-            </div>
+              <div className="space-y-1">
+                <p className="text-lg font-bold text-white">
+                  Drop image here or click to browse
+                </p>
+                <p className="text-xs text-neutral-400">
+                  Search sarees, kurtis, dresses, sneakers, watches, bags, and more
+                </p>
+              </div>
 
-            {/* Action Buttons inside Zone */}
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                id="btn-upload-image"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs sm:text-sm shadow-md shadow-amber-500/20 flex items-center gap-2 transition-transform active:scale-95"
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span>Upload Image</span>
-              </button>
+              {/* Action Buttons inside Zone */}
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  id="btn-upload-image"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-extrabold text-sm shadow-lg shadow-amber-400/20 flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Choose Photo from Device</span>
+                </button>
 
-              <button
-                type="button"
-                id="btn-open-camera"
-                onClick={onOpenCamera}
-                className="px-4 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-semibold text-xs sm:text-sm border border-neutral-700 flex items-center gap-2 transition-colors"
-              >
-                <Camera className="w-4 h-4 text-neutral-300" />
-                <span>Take Photo</span>
-              </button>
+                <button
+                  type="button"
+                  id="btn-open-camera"
+                  onClick={onOpenCamera}
+                  className="px-4 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-semibold text-xs sm:text-sm border border-neutral-700 flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Camera className="w-4 h-4 text-neutral-300" />
+                  <span>Take Photo</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-4 text-neutral-400 text-xs pt-1">
+                <span className="flex items-center gap-1 text-neutral-300">
+                  <Clipboard className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Paste image anywhere (Ctrl+V)</span>
+                </span>
+                <span>&bull;</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowUrlInput(!showUrlInput);
+                  }}
+                  className="text-amber-400 hover:underline flex items-center gap-1 font-medium"
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <span>Or enter image link</span>
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Optional Direct URL Input */}
+          {showUrlInput && (
+            <form onSubmit={handleUrlSubmit} className="flex gap-2 p-3 bg-neutral-900 border border-neutral-800 rounded-xl">
+              <input
+                type="url"
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.target.value)}
+                placeholder="Paste public image URL (e.g., https://...)"
+                className="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400"
+                required
+              />
+              <button
+                type="submit"
+                disabled={isLoadingUrl}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded-lg disabled:opacity-50 transition-colors"
+              >
+                {isLoadingUrl ? 'Loading...' : 'Fetch Image'}
+              </button>
+            </form>
+          )}
         </div>
       ) : (
         /* Image Preview State (Prompt requirement: After upload preview) */

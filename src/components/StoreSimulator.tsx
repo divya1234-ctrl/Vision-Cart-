@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Store, Camera, Sparkles, ExternalLink, X, ArrowLeft, Check, Layers, RefreshCw, ShoppingCart, Star, Heart } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Store, Camera, Sparkles, ExternalLink, X, ArrowLeft, Check, Layers, RefreshCw, ShoppingCart, Star, Heart, Upload, Image as ImageIcon } from 'lucide-react';
 import { AIAnalysisResult, RankedProduct, StoreName } from '../types/index.js';
 import { performVisualSearch } from '../services/api.js';
 
 interface StoreSimulatorProps {
   onBackToApp: () => void;
   onOpenDownloadModal: () => void;
+  onImageSelected?: (base64: string, mimeType: string) => void;
 }
 
 interface SimulatedItem {
@@ -221,6 +222,7 @@ const STORE_CONFIGS: Record<StoreName, {
 export const StoreSimulator: React.FC<StoreSimulatorProps> = ({
   onBackToApp,
   onOpenDownloadModal,
+  onImageSelected,
 }) => {
   const [currentStore, setCurrentStore] = useState<StoreName>('Amazon');
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
@@ -232,6 +234,24 @@ export const StoreSimulator: React.FC<StoreSimulatorProps> = ({
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [rankedProducts, setRankedProducts] = useState<RankedProduct[]>([]);
   const [drawerStoreFilter, setDrawerStoreFilter] = useState<StoreName | 'All'>('All');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        if (dataUrl) {
+          handleTriggerVisualSearch(dataUrl);
+          if (onImageSelected) {
+            onImageSelected(dataUrl, file.type);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const storeConfig = STORE_CONFIGS[currentStore];
 
@@ -279,6 +299,14 @@ export const StoreSimulator: React.FC<StoreSimulatorProps> = ({
 
   return (
     <div className="relative min-h-[85vh] bg-neutral-950 rounded-2xl border border-neutral-800 overflow-hidden shadow-2xl flex flex-col">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Top Banner: Simulator Mode Controls */}
       <div className="bg-neutral-900 border-b border-neutral-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
@@ -314,10 +342,15 @@ export const StoreSimulator: React.FC<StoreSimulatorProps> = ({
           ))}
         </div>
 
-        {/* Shopping Hint */}
-        <div className="flex items-center gap-1.5 text-neutral-400 text-[11px] hidden sm:flex">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>Hover over any item image below to launch visual search</span>
+        {/* Direct Upload Button from Simulator */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-bold flex items-center gap-1.5 shadow-sm transition-transform active:scale-95 cursor-pointer"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>Upload Your Image</span>
+          </button>
         </div>
       </div>
 
@@ -333,38 +366,72 @@ export const StoreSimulator: React.FC<StoreSimulatorProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative w-48 sm:w-72">
+            <div className="relative w-56 sm:w-80">
               <input
                 type="text"
                 readOnly
-                value="Search products, brands and more..."
-                className="w-full bg-neutral-800/80 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-neutral-400 cursor-not-allowed"
+                placeholder="Search products or click camera to upload photo..."
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg pl-3 pr-9 py-1.5 text-xs text-neutral-300 cursor-pointer hover:border-amber-400 focus:outline-none transition-colors"
               />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-neutral-700 text-amber-400 transition-colors"
+                title="Upload image to search"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
             </div>
             <ShoppingCart className="w-5 h-5 text-neutral-400" />
           </div>
         </div>
 
-        {/* Tip Banner */}
-        <div className="bg-amber-950/40 border-b border-amber-900/40 px-6 py-2.5 text-xs text-amber-200 flex items-center justify-between">
+        {/* Tip Banner with Upload CTA */}
+        <div className="bg-amber-950/40 border-b border-amber-900/40 px-6 py-2.5 text-xs text-amber-200 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Camera className="w-4 h-4 text-amber-400" />
+            <Camera className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
-              <strong>Try the Extension:</strong> Hover your mouse over any product image below to see the floating <em>VisionCart</em> button, or click to find everywhere!
+              <strong>Try Visual Search:</strong> Hover over any item image below, or click <em>"Upload Image"</em> to test with your own photo!
             </span>
           </div>
-          <span className="text-[11px] text-amber-400/80 underline cursor-pointer" onClick={onOpenDownloadModal}>
-            Install on Chrome
-          </span>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="text-xs font-bold text-neutral-950 bg-amber-400 hover:bg-amber-300 px-3 py-1 rounded-md transition-colors"
+          >
+            Upload Image Now
+          </button>
         </div>
 
         {/* Simulated Product Listing Grid */}
-        <div className="p-6 max-w-6xl mx-auto">
+        <div className="p-6 max-w-6xl mx-auto space-y-6">
+          {/* Custom Upload Card */}
+          <div className="p-4.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-neutral-900 to-amber-500/5 border border-amber-500/25 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                <Upload className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Have a photo of clothes, shoes, or gadgets?</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Upload it right here to search across Meesho (wholesale), Amazon, Flipkart, Myntra & Ajio simultaneously!
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-extrabold flex items-center justify-center gap-2 shadow-md transition-transform active:scale-95 cursor-pointer shrink-0"
+            >
+              <ImageIcon className="w-4 h-4" />
+              <span>Upload Image File</span>
+            </button>
+          </div>
+
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-300">
               Trending on {storeConfig.name} Today
             </h2>
-            <span className="text-xs text-neutral-500">Simulated E-Commerce Page</span>
+            <span className="text-xs text-neutral-500">Hover over any photo to test extension</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

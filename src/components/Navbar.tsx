@@ -1,5 +1,5 @@
-import React from 'react';
-import { Camera, Sparkles, Layers, RefreshCw, AlertCircle, Chrome, MonitorSmartphone, Download } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Camera, Sparkles, Layers, RefreshCw, AlertCircle, Chrome, MonitorSmartphone, Download, Upload } from 'lucide-react';
 
 interface NavbarProps {
   onReset: () => void;
@@ -9,6 +9,8 @@ interface NavbarProps {
   isSimulatorMode: boolean;
   geminiActive: boolean;
   hasActiveSearch: boolean;
+  onImageSelected?: (base64: string, mimeType: string) => void;
+  onOpenCamera?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,9 +21,35 @@ export const Navbar: React.FC<NavbarProps> = ({
   isSimulatorMode,
   geminiActive,
   hasActiveSearch,
+  onImageSelected,
+  onOpenCamera,
 }) => {
+  const navFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleNavFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target?.result as string;
+        if (result && onImageSelected) {
+          onImageSelected(result, file.type);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800 text-white">
+      <input
+        ref={navFileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handleNavFileChange}
+        className="hidden"
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand */}
         <div
@@ -70,26 +98,37 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Always Available Upload Button in Navbar */}
+          <button
+            id="nav-btn-upload-image"
+            onClick={() => navFileInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs sm:text-sm font-bold shadow-md shadow-amber-400/20 transition-transform active:scale-95 cursor-pointer"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>Upload Image</span>
+          </button>
+
           <button
             onClick={onToggleSimulator}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
               isSimulatorMode
-                ? 'bg-amber-400 text-neutral-950 border-amber-300 shadow-sm'
+                ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-neutral-700'
                 : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-neutral-700'
             }`}
           >
             <MonitorSmartphone className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isSimulatorMode ? 'Back to Visual Search' : 'Test on E-Commerce'}</span>
+            <span className="hidden sm:inline">{isSimulatorMode ? 'Exit Simulator' : 'Test on E-Commerce'}</span>
+            <span className="sm:hidden">{isSimulatorMode ? 'Exit' : 'Demo'}</span>
           </button>
 
           {hasActiveSearch && (
             <button
               id="btn-nav-new-search"
               onClick={onReset}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs sm:text-sm font-semibold shadow-md shadow-amber-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-semibold transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>New Search</span>
+              <span className="hidden sm:inline">Reset</span>
             </button>
           )}
         </div>
